@@ -1,0 +1,323 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:09.800
+Welcome to Introduction to Regression.
+
+2
+00:00:09.800 --> 00:00:12.239
+After watching this video, you will be able to
+
+3
+00:00:12.239 --> 00:00:15.680
+Define regression, Compare simple and multiple regression
+
+4
+00:00:15.680 --> 00:00:18.559
+Explain applications of regression
+
+5
+00:00:18.559 --> 00:00:20.920
+Regression is a type of supervised learning model.
+
+6
+00:00:20.920 --> 00:00:25.639
+It models a relationship between a continuous
+target variable and explanatory features.
+
+7
+00:00:25.639 --> 00:00:29.559
+Consider this dataset related to CO2 emissions from different cars.
+
+8
+00:00:29.559 --> 00:00:34.599
+The features in this dataset include engine size,
+number of cylinders, fuel consumption,
+
+9
+00:00:34.599 --> 00:00:37.840
+and CO2 emissions from various automobile models.
+
+10
+00:00:37.840 --> 00:00:42.759
+Given this dataset, is it possible to predict the
+CO2 emission of a new car from the listed
+
+11
+00:00:42.759 --> 00:00:43.759
+features?
+
+12
+00:00:43.759 --> 00:00:45.459
+The answer is yes.
+
+13
+00:00:45.459 --> 00:00:49.040
+Using potentially predictive features,
+you can use regression to predict a continuous
+
+14
+00:00:49.040 --> 00:00:51.880
+value, such as CO2 emissions.
+
+15
+00:00:51.880 --> 00:00:55.479
+Let's consider the previous dataset
+comprising some features in past cars.
+
+16
+00:00:55.479 --> 00:01:00.360
+Then, from that data, a model can be
+trained to estimate the CO2 emissions of each car.
+
+17
+00:01:00.360 --> 00:01:03.279
+Let's use regression to build such a predictive model.
+
+18
+00:01:03.279 --> 00:01:09.199
+Then, the model is used to predict the
+expected CO2 emission for a new or hypothetical car.
+
+19
+00:01:09.199 --> 00:01:10.760
+There are several types of regression.
+
+20
+00:01:10.760 --> 00:01:14.199
+Deciding which one to use depends on the
+data you have for the dependent variable and the
+
+21
+00:01:14.199 --> 00:01:16.440
+type of model that provides the best fit.
+
+22
+00:01:16.440 --> 00:01:20.760
+In this video, we'll discuss the following
+two types of regression models, simple regression
+
+23
+00:01:20.760 --> 00:01:22.599
+and multiple regression.
+
+24
+00:01:22.599 --> 00:01:26.919
+Simple regression is when a single independent
+variable estimates a dependent variable.
+
+25
+00:01:26.919 --> 00:01:29.360
+Simple regression can be linear or nonlinear.
+
+26
+00:01:29.360 --> 00:01:33.559
+For example, predicting CO2 emission using
+the variable engine size.
+
+27
+00:01:33.559 --> 00:01:37.800
+Simple linear regression imposes a linear
+relationship between the dependent and independent
+
+28
+00:01:37.800 --> 00:01:38.800
+variables.
+
+29
+00:01:38.800 --> 00:01:43.639
+Similarly, nonlinear regression creates a
+nonlinear relationship between those variables.
+
+30
+00:01:43.639 --> 00:01:48.680
+When more than one independent variable is present,
+the process is called multiple regression.
+
+31
+00:01:48.680 --> 00:01:52.879
+The distinctions between linear and nonlinear
+relationships apply to simple and multiple
+
+32
+00:01:52.879 --> 00:01:53.879
+regression.
+
+33
+00:01:53.879 --> 00:01:57.879
+For example, predicting CO2 emission using
+engine size and the number of cylinders in
+
+34
+00:01:57.879 --> 00:01:59.160
+any given car.
+
+35
+00:01:59.160 --> 00:02:03.480
+Again, depending on the relation between
+dependent and independent variables, it can be either
+
+36
+00:02:03.480 --> 00:02:05.800
+linear or nonlinear regression.
+
+37
+00:02:05.800 --> 00:02:08.759
+Let's examine some sample applications of regression.
+
+38
+00:02:08.759 --> 00:02:12.479
+Essentially, we use regression when we want
+to estimate a continuous value.
+
+39
+00:02:12.479 --> 00:02:18.399
+For instance, one of the applications of
+regression analysis could be in the area of sales forecasting.
+
+40
+00:02:18.399 --> 00:02:21.759
+You can predict a salesperson's yearly sales
+from independent variables, such as
+
+41
+00:02:21.759 --> 00:02:24.899
+customers, number of leads, and order history.
+
+42
+00:02:24.899 --> 00:02:28.839
+Regression analysis can predict the price of
+a house in an area based on its size, number
+
+43
+00:02:28.839 --> 00:02:30.660
+of bedrooms, and so on.
+
+44
+00:02:30.660 --> 00:02:34.520
+You can use regression analysis to predict
+when an automobile or an industrial machine
+
+45
+00:02:34.520 --> 00:02:37.600
+will require maintenance rather than waiting for it to fail.
+
+46
+00:02:37.600 --> 00:02:41.320
+You can even use it to predict employment
+income from independent variables, such as
+
+47
+00:02:41.320 --> 00:02:47.839
+hours of work, education, occupation, sex, age,
+years of experience, and so on.
+
+48
+00:02:47.839 --> 00:02:52.279
+Indeed, you can find many examples of the
+usefulness of regression analysis in these
+
+49
+00:02:52.279 --> 00:02:56.880
+and many other fields or domains, such as
+finance, healthcare, and retail.
+
+50
+00:02:56.880 --> 00:03:00.360
+Let's examine additional sample applications of regression.
+
+51
+00:03:00.360 --> 00:03:05.080
+You can use regression to estimate the rainfall
+in a region based on meteorological factors,
+
+52
+00:03:05.080 --> 00:03:09.039
+such as temperature, humidity, wind speed,
+and air pressure.
+
+53
+00:03:09.039 --> 00:03:13.240
+It can also be used in the field of environmental
+protection, for example, to determine the
+
+54
+00:03:13.240 --> 00:03:15.860
+probability and severity of wildfires.
+
+55
+00:03:15.880 --> 00:03:20.460
+In public health, you can use regression
+analysis to predict the spread of infectious diseases.
+
+56
+00:03:20.460 --> 00:03:24.860
+You can even use it to estimate the likelihood
+of developing diseases, such as diabetes,
+
+57
+00:03:24.860 --> 00:03:28.419
+heart disease, or cancer, based on patient data.
+
+58
+00:03:28.419 --> 00:03:30.639
+There are many regression algorithms.
+
+59
+00:03:30.639 --> 00:03:35.899
+Each algorithm is important in the appropriate
+context and suited to specific conditions.
+
+60
+00:03:35.899 --> 00:03:40.580
+Linear and polynomial regression are classical
+statistical modeling methods, while random
+
+61
+00:03:40.580 --> 00:03:44.779
+forest and XGBoost are modern machine learning regression models.
+
+62
+00:03:44.779 --> 00:03:49.300
+Other modern regression algorithms include
+k-nearest neighbors, support vector machines,
+
+63
+00:03:49.300 --> 00:03:50.979
+and neural networks.
+
+64
+00:03:50.979 --> 00:03:55.820
+In this video, you learned regression is a
+machine-learning technique that models a relationship
+
+65
+00:03:55.820 --> 00:03:59.820
+between a continuous target variable and explanatory features.
+
+66
+00:03:59.820 --> 00:04:04.139
+Simple regression is when a single independent
+variable estimates a dependent variable.
+
+67
+00:04:04.139 --> 00:04:07.020
+This regression can be linear or nonlinear.
+
+68
+00:04:07.020 --> 00:04:12.100
+When more than one independent variable is present,
+the process is called multiple regression.
+
+69
+00:04:12.100 --> 00:04:14.179
+There are many applications of regression.
+
+70
+00:04:14.179 --> 00:04:18.300
+You can use it to forecast sales, predict
+maintenance expenses, estimate rainfall,
+
+71
+00:04:18.300 --> 00:04:19.940
+and spread of infectious disease.

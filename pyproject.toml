@@ -1,0 +1,11 @@
+[project]
+name = "support-ai"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "chromadb>=1.0.20",
+  "pypdf>=6.0.0",
+  "sentence-transformers>=5.1.0",
+]
