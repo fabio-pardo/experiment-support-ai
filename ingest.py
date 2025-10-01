@@ -2,26 +2,22 @@
 import re
 from pathlib import Path
 from typing import List, Tuple, Dict
+from pypdf import PdfReader
+import webvtt
 
 import chromadb
-from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
-
-# ---- Config ----
-DATA_DIR = Path("data")  # parent directory to ingest
-COLLECTION_NAME = "all-my-documents"  # name for your collection
-CHUNK_SIZE = 1200  # characters per chunk
-CHUNK_OVERLAP = 150  # overlap between chunks
-
-# If you prefer OpenAI embeddings, swap this for OpenAIEmbeddingFunction(...)
-embedding_fn = SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+from config import (
+    DATA_DIR,
+    COLLECTION_NAME,
+    CHUNK_SIZE,
+    CHUNK_OVERLAP,
+    embedding_fn,
+    EXCLUDE_FILES_FROM_INGESTION,
+)
 
 
 # ---- Helpers ----
-def read_pdf(p: Path) -> str:
-    try:
-        from pypdf import PdfReader
-    except ImportError:
-        raise SystemExit("Please `pip install pypdf` to read PDFs.")
+def read_pdf_content(p: Path) -> str:
     text_parts = []
     with p.open("rb") as f:
         reader = PdfReader(f)
@@ -31,13 +27,11 @@ def read_pdf(p: Path) -> str:
     return "\n".join(text_parts).strip()
 
 
-def read_vtt(p: Path) -> str:
+def read_vtt_content(p: Path) -> str:
     """
     Use webvtt if available; fall back to a simple parser.
     """
     try:
-        import webvtt
-
         return "\n".join([c.text for c in webvtt.read(str(p))]).strip()
     except Exception:
         # very light-weight VTT fallback (ignores timing)
@@ -51,32 +45,32 @@ def read_vtt(p: Path) -> str:
         return re.sub(r"\n{2,}", "\n", content).strip()
 
 
-def read_text(p: Path) -> str:
+def read_text_file_content(p: Path) -> str:
     return p.read_text(encoding="utf-8", errors="ignore")
 
 
-def extract_text(p: Path) -> Tuple[str, Dict]:
+def extract_document_data(p: Path) -> Tuple[str, Dict]:
     """
     Returns (text, metadata) for supported files.
     """
     ext = p.suffix.lower()
     if ext == ".pdf":
-        text = read_pdf(p)
+        text = read_pdf_content(p)
         doc_type = "pdf"
     elif ext in {".vtt", ".srt"}:
-        text = read_vtt(p)
+        text = read_vtt_content(p)
         doc_type = ext.lstrip(".")
     elif ext in {".txt", ".md", ".rst"}:
-        text = read_text(p)
+        text = read_text_file_content(p)
         doc_type = "text"
     elif ext in {".py", ".sh"}:
-        text = read_text(p)
+        text = read_text_file_content(p)
         doc_type = "code"
     elif ext in {".mp4", ".mov", ".mkv"}:
         # Prefer a sibling transcript if present; otherwise skip video binary
         for sidecar in [p.with_suffix(".vtt"), p.with_suffix(".srt")]:
             if sidecar.exists():
-                text = extract_text(sidecar)[0]
+                text = extract_document_data(sidecar)[0]
                 doc_type = "video_transcript"
                 break
         else:
@@ -109,7 +103,7 @@ def chunk_text(
     return [c for c in chunks if c]
 
 
-def walk_data_dir(root: Path) -> List[Tuple[str, Dict, str]]:
+def prepare_ingestion_chunks_from_directory(root: Path) -> List[Tuple[str, Dict, str]]:
     """
     Walks DATA_DIR and returns a list of (chunk_text, metadata, id)
     """
@@ -139,10 +133,10 @@ def walk_data_dir(root: Path) -> List[Tuple[str, Dict, str]]:
             continue
 
         # Skip transcript files we've already processed via their videos
-        if p in processed_transcripts:
+        if p in processed_transcripts or p in EXCLUDE_FILES_FROM_INGESTION:
             continue
 
-        text, meta = extract_text(p)
+        text, meta = extract_document_data(p)
         if not text:
             continue
 
@@ -155,13 +149,13 @@ def walk_data_dir(root: Path) -> List[Tuple[str, Dict, str]]:
 
 
 # ---- Main ingest ----
-def ingest():
+def run_document_ingestion():
     client = chromadb.PersistentClient(path="./chroma_db")
     collection = client.get_or_create_collection(
         name=COLLECTION_NAME, embedding_function=embedding_fn
     )
 
-    items = walk_data_dir(DATA_DIR)
+    items = prepare_ingestion_chunks_from_directory(DATA_DIR)
     if not items:
         print(f"No ingestible files found under {DATA_DIR.resolve()}")
         return
@@ -199,20 +193,3 @@ def ingest():
     print(
         f"✅ Ingest complete. {collection.count()} total records in '{COLLECTION_NAME}'."
     )
-    # Example query
-    q = "What does the regression runbook say about troubleshooting?"
-    print(q)
-    res = collection.query(query_texts=[q], n_results=5)
-    print("\nTop matches:")
-    for doc, meta, id_ in zip(res["documents"][0], res["metadatas"][0], res["ids"][0]):
-        print(f"- {id_}  ({meta.get('type')})")
-        print(doc[:200].replace("\n", " ") + ("…" if len(doc) > 200 else ""))
-        print()
-
-    print("---------------------------------------------------")
-    res = collection.query(query_texts=["What is RAG?"], n_results=5)
-    print("what is RAG?")
-    for doc, meta, id_ in zip(res["documents"][0], res["metadatas"][0], res["ids"][0]):
-        print(f"- {id_}  ({meta.get('type')})")
-        print(doc[:200].replace("\n", " ") + ("…" if len(doc) > 200 else ""))
-        print()

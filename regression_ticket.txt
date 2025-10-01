@@ -1,0 +1,1 @@
+This is a sample support ticket regarding a regression issue. We observed unexpected behavior in the latest deployment, causing some previously working features to fail. Please investigate and provide a rollback plan.
