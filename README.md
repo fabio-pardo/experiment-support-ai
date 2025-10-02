@@ -28,18 +28,24 @@ Troubleshooting diagram: [PDF Page 5]”
 - Multi-modal retrieval (text, video, doc).
 - Snippet + context highlighting (so users trust the answer).
 - Video time-jump links (wow factor).
-- Unified interface (single chat or web UI).
+
+## Current Status
+
+- The project currently supports ingestion of PDF and VTT (video transcript) files.
+- The `process_ticket_pdf` function has been refactored and moved to `ingest.py` for better modularity.
+- Uses ChromaDB for vector storage and `SentenceTransformerEmbeddingFunction` for embeddings.
 
 ## 🚀 How to Build the MVP
 
 - Backend:
   - Store runbooks & transcripts in a vector database (e.g., Pinecone, Weaviate, or FAISS).
-  - Use embeddings to make them searchable.
+  - Store runbooks & transcripts in a vector database (currently [ChromaDB](https://www.trychroma.com/)).
+  - Use embeddings to make them searchable (currently using `SentenceTransformerEmbeddingFunction` with `all-MiniLM-L6-v2`).
   - For videos, pre-process transcripts and attach timestamps.
 
 - Frontend:
-  - Simple web UI or chatbot where a user types a question.
-  - Show results grouped by media type.
+  - Simple web UI or chatbot where a user types a question. (Not yet implemented)
+  - Show results grouped by media type. (Not yet implemented)
 
 - Demo dataset:
   - Take 2–3 runbooks (text).
