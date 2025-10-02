@@ -1,6 +1,6 @@
 # chroma.py
 import re
-from pathlib import Path
+from pathlib import Path  # Ensure Path is imported
 from typing import List, Tuple, Dict
 from pypdf import PdfReader
 import webvtt
@@ -25,6 +25,21 @@ def read_pdf_content(p: Path) -> str:
             # ensure text is a string (some pages can return None)
             text_parts.append(page.extract_text() or "")
     return "\n".join(text_parts).strip()
+
+
+def process_ticket_pdf(ticket_pdf_path: Path) -> str:
+    """
+    Reads the content of a PDF support ticket.
+    """
+    if not ticket_pdf_path.exists():
+        return f"Error: Ticket PDF not found at {ticket_pdf_path}"
+    if ticket_pdf_path.suffix.lower() != ".pdf":
+        return f"Error: File {ticket_pdf_path} is not a PDF."
+
+    print(f"Reading content from {ticket_pdf_path}...")
+    ticket_text = read_pdf_content(ticket_pdf_path)
+    print("Successfully read PDF content.")
+    return ticket_text
 
 
 def read_vtt_content(p: Path) -> str:

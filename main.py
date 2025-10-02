@@ -1,29 +1,13 @@
 from dotenv import load_dotenv
 import chromadb
-from ingest import run_document_ingestion, read_pdf_content
+from pathlib import Path
+from ingest import run_document_ingestion, process_ticket_pdf
 from config import COLLECTION_NAME, embedding_fn
 
-from pathlib import Path
 import os
 import google.generativeai as genai
 
 load_dotenv()  # Load environment variables from .env
-
-
-def process_ticket_pdf(ticket_pdf_path: Path) -> str:
-    """
-    Reads the content of a PDF support ticket.
-    """
-
-    if not ticket_pdf_path.exists():
-        return f"Error: Ticket PDF not found at {ticket_pdf_path}"
-    if ticket_pdf_path.suffix.lower() != ".pdf":
-        return f"Error: File {ticket_pdf_path} is not a PDF."
-
-    print(f"Reading content from {ticket_pdf_path}...")
-    ticket_text = read_pdf_content(ticket_pdf_path)
-    print("Successfully read PDF content.")
-    return ticket_text
 
 
 def generate_llm_response(
@@ -41,16 +25,6 @@ def generate_llm_response(
     # For this demonstration, we'll re-configure inside the function,
     # but in a production app, you might configure it globally or pass the client.
     genai.configure(api_key=gemini_api_key)
-
-    # --- TEMPORARY: List available models for debugging ---
-    print("\n--- Listing available Gemini models ---")
-    for m in genai.list_models():
-        if "generateContent" in m.supported_generation_methods:
-            print(
-                f"Model: {m.name}, Supported Methods: {m.supported_generation_methods}"
-            )
-    print("---------------------------------------\n")
-    # --- END TEMPORARY ---
 
     system_prompt = """
     You are an expert IT support agent. Your task is to analyze a support ticket and provide the best course of action
