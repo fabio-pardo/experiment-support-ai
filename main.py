@@ -29,7 +29,6 @@ def generate_llm_response(
     system_prompt = """
     You are an expert IT support agent. Your task is to analyze a support ticket and provide the best course of action
     based on the provided context. The course of action should be concise, actionable, and refer to the context
-    user_query += "\nBased on the above support ticket, what is a general best course of action without specific context?"
     """
 
     user_query = f"Support Ticket:\n```\n{ticket_content}\n```\n\n"
@@ -57,6 +56,7 @@ def generate_llm_response(
 def main():
     # Ingest documents into the vector database
     run_document_ingestion()
+    print("Documents ingested successfully.")
     # Assuming you have a sample ticket PDF, e.g., in your data/pdfs directory
     sample_ticket_path = Path(
         "data/pdfs/CMDR.pdf"

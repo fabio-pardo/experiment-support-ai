@@ -10,5 +10,7 @@ EXCLUDE_FILES_FROM_INGESTION = [
     Path("data/pdfs/CMDR.pdf")
 ]  # Example: Exclude the sample ticket PDF
 
+GEMINI_MODEL_NAME = "gemini-2.5-pro"
 # If you prefer OpenAI embeddings, swap this for OpenAIEmbeddingFunction(...)
-embedding_fn = SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
+embedding_fn = SentenceTransformerEmbeddingFunction(model_name=EMBEDDING_MODEL_NAME)

@@ -1,7 +1,7 @@
 # chroma.py
 import re
 from pathlib import Path  # Ensure Path is imported
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Any  # Added Any for more flexible return type
 from pypdf import PdfReader
 import webvtt
 
@@ -42,22 +42,45 @@ def process_ticket_pdf(ticket_pdf_path: Path) -> str:
     return ticket_text
 
 
-def read_vtt_content(p: Path) -> str:
+def _read_vtt_captions(p: Path) -> List[Dict[str, str | None]]:
     """
-    Use webvtt if available; fall back to a simple parser.
+    Reads a VTT/SRT file and returns a list of dictionaries,
+    each containing the caption text, start time, and end time.
+    Returns None for start/end if webvtt parsing fails.
     """
+    captions_data: List[Dict[str, str | None]] = []
     try:
-        return "\n".join([c.text for c in webvtt.read(str(p))]).strip()
-    except Exception:
-        # very light-weight VTT fallback (ignores timing)
+        for caption in webvtt.read(str(p)):
+            captions_data.append(
+                {
+                    "text": caption.text.strip(),
+                    "start_time": caption.start,  # e.g., "00:00:01.000"
+                    "end_time": caption.end,  # e.g., "00:00:03.500"
+                }
+            )
+    except Exception as e:
+        print(
+            f"Warning: Could not parse VTT/SRT with webvtt, falling back to simple text extraction for {p}: {e}"
+        )
+        # Fallback to simple text extraction if webvtt fails, but without timestamps
         content = p.read_text(encoding="utf-8", errors="ignore")
-        # remove WEBVTT header and timestamps
+        # Remove common VTT/SRT headers and timestamps from content for clean text
         content = re.sub(r"^WEBVTT.*?$", "", content, flags=re.MULTILINE)
-        content = re.sub(r"\d+\n", "", content)
+        content = re.sub(
+            r"^\d+\s*$", "", content, flags=re.MULTILINE
+        )  # Remove cue numbers
         content = re.sub(
             r"\d{2}:\d{2}:\d{2}\.\d{3}\s+-->\s+\d{2}:\d{2}:\d{2}\.\d{3}.*", "", content
-        )
-        return re.sub(r"\n{2,}", "\n", content).strip()
+        )  # Remove time ranges
+        content = re.sub(
+            r"\n{2,}", "\n", content
+        ).strip()  # Consolidate multiple newlines
+
+        if content:
+            captions_data.append(
+                {"text": content, "start_time": None, "end_time": None}
+            )
+    return captions_data
 
 
 def read_text_file_content(p: Path) -> str:
@@ -68,13 +91,17 @@ def extract_document_data(p: Path) -> Tuple[str, Dict]:
     """
     Returns (text, metadata) for supported files.
     """
+    content: Any = ""  # Use Any to allow for both string and List[Dict] content
+    doc_type: str = "unknown"
+    meta: Dict = {}
+
     ext = p.suffix.lower()
     if ext == ".pdf":
         text = read_pdf_content(p)
         doc_type = "pdf"
     elif ext in {".vtt", ".srt"}:
-        text = read_vtt_content(p)
-        doc_type = ext.lstrip(".")
+        content = _read_vtt_captions(p)  # Returns List[Dict]
+        doc_type = "video_caption"
     elif ext in {".txt", ".md", ".rst"}:
         text = read_text_file_content(p)
         doc_type = "text"
@@ -85,7 +112,7 @@ def extract_document_data(p: Path) -> Tuple[str, Dict]:
         # Prefer a sibling transcript if present; otherwise skip video binary
         for sidecar in [p.with_suffix(".vtt"), p.with_suffix(".srt")]:
             if sidecar.exists():
-                text = extract_document_data(sidecar)[0]
+                content = _read_vtt_captions(sidecar)  # Returns List[Dict]
                 doc_type = "video_transcript"
                 break
         else:
@@ -94,13 +121,13 @@ def extract_document_data(p: Path) -> Tuple[str, Dict]:
         # unsupported file type
         return "", {}
 
-    meta = {
+    base_meta = {
         "source": str(p),
         "name": p.name,
         "parent": str(p.parent),
         "type": doc_type,
     }
-    return text, meta
+    return content, base_meta
 
 
 def chunk_text(
@@ -111,7 +138,7 @@ def chunk_text(
     n = len(text)
     while i < n:
         chunk = text[i : min(i + size, n)]
-        chunks.append(chunk.strip())
+        chunks.append(chunk)
         if i + size >= n:
             break
         i += size - overlap
