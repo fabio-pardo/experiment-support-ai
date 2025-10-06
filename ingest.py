@@ -1,7 +1,6 @@
 # chroma.py
 import re
 from pathlib import Path  # Ensure Path is imported
-from typing import List, Tuple, Dict, Any  # Added Any for more flexible return type
 from pypdf import PdfReader
 import webvtt
 
@@ -11,14 +10,14 @@ from config import (
     COLLECTION_NAME,
     CHUNK_SIZE,
     CHUNK_OVERLAP,
-    embedding_fn,
     EXCLUDE_FILES_FROM_INGESTION,
+    EMBEDDING_FN,
 )
 
 
 # ---- Helpers ----
 def read_pdf_content(p: Path) -> str:
-    text_parts = []
+    text_parts: list[str] = []
     with p.open("rb") as f:
         reader = PdfReader(f)
         for page in reader.pages:
@@ -42,20 +41,21 @@ def process_ticket_pdf(ticket_pdf_path: Path) -> str:
     return ticket_text
 
 
-def _read_vtt_captions(p: Path) -> List[Dict[str, str | None]]:
+def _read_vtt_captions(p: Path) -> list[dict[str, str | None]]:
     """
     Reads a VTT/SRT file and returns a list of dictionaries,
     each containing the caption text, start time, and end time.
     Returns None for start/end if webvtt parsing fails.
     """
-    captions_data: List[Dict[str, str | None]] = []
+    captions_data: list[dict[str, str | None]] = []
     try:
-        for caption in webvtt.read(str(p)):
+        captions: webvtt.WebVTT = webvtt.read(str(p))
+        for caption in captions:  # pyright: ignore[reportUnknownVariableType]
             captions_data.append(
                 {
-                    "text": caption.text.strip(),
-                    "start_time": caption.start,  # e.g., "00:00:01.000"
-                    "end_time": caption.end,  # e.g., "00:00:03.500"
+                    "text": caption.text.strip(),  # pyright: ignore[reportUnknownMemberType]
+                    "start_time": caption.start,  # e.g., "00:00:01.000"  # pyright: ignore[reportUnknownMemberType]
+                    "end_time": caption.end,  # e.g., "00:00:03.500"  # pyright: ignore[reportUnknownMemberType]
                 }
             )
     except Exception as e:
@@ -87,26 +87,29 @@ def read_text_file_content(p: Path) -> str:
     return p.read_text(encoding="utf-8", errors="ignore")
 
 
-def extract_document_data(p: Path) -> Tuple[str, Dict]:
+def extract_document_data(
+    p: Path,
+) -> tuple[str | list[dict[str, str | None]], dict[str, str]]:
     """
     Returns (text, metadata) for supported files.
     """
-    content: Any = ""  # Use Any to allow for both string and List[Dict] content
+    content: str | list[dict[str, str | None]] = (
+        ""  # Use Any to allow for both string and List[Dict] content
+    )
     doc_type: str = "unknown"
-    meta: Dict = {}
 
     ext = p.suffix.lower()
     if ext == ".pdf":
-        text = read_pdf_content(p)
+        content = read_pdf_content(p)
         doc_type = "pdf"
     elif ext in {".vtt", ".srt"}:
         content = _read_vtt_captions(p)  # Returns List[Dict]
         doc_type = "video_caption"
     elif ext in {".txt", ".md", ".rst"}:
-        text = read_text_file_content(p)
+        content = read_text_file_content(p)
         doc_type = "text"
     elif ext in {".py", ".sh"}:
-        text = read_text_file_content(p)
+        content = read_text_file_content(p)
         doc_type = "code"
     elif ext in {".mp4", ".mov", ".mkv"}:
         # Prefer a sibling transcript if present; otherwise skip video binary
@@ -131,13 +134,17 @@ def extract_document_data(p: Path) -> Tuple[str, Dict]:
 
 
 def chunk_text(
-    text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP
-) -> List[str]:
-    chunks = []
+    text: tuple[str | list[dict[str, str | None]]],
+    size: int = CHUNK_SIZE,
+    overlap: int = CHUNK_OVERLAP,
+) -> list[tuple[str | list[dict[str, str | None]], ...]]:
+    chunks: list[tuple[str | list[dict[str, str | None]], ...]] = []
     i = 0
     n = len(text)
     while i < n:
-        chunk = text[i : min(i + size, n)]
+        chunk: tuple[str | list[dict[str, str | None]], ...] = text[
+            i : min(i + size, n)
+        ]
         chunks.append(chunk)
         if i + size >= n:
             break
@@ -145,12 +152,16 @@ def chunk_text(
     return [c for c in chunks if c]
 
 
-def prepare_ingestion_chunks_from_directory(root: Path) -> List[Tuple[str, Dict, str]]:
+def prepare_ingestion_chunks_from_directory(
+    root: Path,
+) -> list[tuple[tuple[str | list[dict[str, str | None]], ...], dict[str, str], str]]:
     """
     Walks DATA_DIR and returns a list of (chunk_text, metadata, id)
     """
-    items: List[Tuple[str, Dict, str]] = []
-    processed_transcripts = (
+    items: list[
+        tuple[tuple[str | list[dict[str, str | None]], ...], dict[str, str], str]
+    ] = []
+    processed_transcripts: set[Path] = (
         set()
     )  # Track which transcript files we've processed via videos
 
@@ -182,7 +193,7 @@ def prepare_ingestion_chunks_from_directory(root: Path) -> List[Tuple[str, Dict,
         if not text:
             continue
 
-        chunks = chunk_text(text)
+        chunks = chunk_text((text,))
         for idx, chunk in enumerate(chunks):
             rel = p.relative_to(root.parent) if root in p.parents else p
             doc_id = f"{rel.as_posix()}::chunk-{idx:04d}"
@@ -194,7 +205,8 @@ def prepare_ingestion_chunks_from_directory(root: Path) -> List[Tuple[str, Dict,
 def run_document_ingestion():
     client = chromadb.PersistentClient(path="./chroma_db")
     collection = client.get_or_create_collection(
-        name=COLLECTION_NAME, embedding_function=embedding_fn
+        name=COLLECTION_NAME,
+        embedding_function=EMBEDDING_FN,  # pyright: ignore[reportArgumentType]
     )
 
     items = prepare_ingestion_chunks_from_directory(DATA_DIR)
@@ -203,10 +215,9 @@ def run_document_ingestion():
         return
 
     # Get existing IDs from collection
-    try:
-        existing_ids = set(collection.get()["ids"])
-    except Exception:
-        existing_ids = set()
+    existing_ids: set[str] = set()
+    for id in collection.get()["ids"]:
+        existing_ids.add(id)
 
     # Filter out items that already exist
     new_items = [
@@ -221,14 +232,20 @@ def run_document_ingestion():
 
     # Process only new items
     BATCH = 100
-    docs, metas, ids = [], [], []
+    docs: list[tuple[str | list[dict[str, str | None]], ...]] = []
+    metas: list[dict[str, str]] = []
+    ids: list[str] = []
     for i, (doc, meta, _id) in enumerate(new_items, 1):
         docs.append(doc)
         metas.append(meta)
         ids.append(_id)
 
         if len(docs) == BATCH or i == len(new_items):
-            collection.add(documents=docs, metadatas=metas, ids=ids)
+            collection.add(
+                documents=docs,  # pyright: ignore[reportArgumentType]
+                metadatas=metas,  # pyright: ignore[reportArgumentType]
+                ids=ids,
+            )
             print(f"Indexed {len(ids)} / {len(new_items)} new chunks...")
             docs, metas, ids = [], [], []
 

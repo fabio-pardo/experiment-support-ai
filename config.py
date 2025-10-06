@@ -13,4 +13,6 @@ EXCLUDE_FILES_FROM_INGESTION = [
 GEMINI_MODEL_NAME = "gemini-2.5-pro"
 # If you prefer OpenAI embeddings, swap this for OpenAIEmbeddingFunction(...)
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
-embedding_fn = SentenceTransformerEmbeddingFunction(model_name=EMBEDDING_MODEL_NAME)
+EMBEDDING_FN: SentenceTransformerEmbeddingFunction = (
+    SentenceTransformerEmbeddingFunction(model_name=EMBEDDING_MODEL_NAME)
+)
