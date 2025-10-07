@@ -87,41 +87,63 @@ def read_text_file_content(p: Path) -> str:
     return p.read_text(encoding="utf-8", errors="ignore")
 
 
+# --- Document Type Handlers ---
+def _handle_pdf(p: Path) -> tuple[str, str]:
+    return read_pdf_content(p), "pdf"
+
+
+def _handle_caption(p: Path) -> tuple[list[dict[str, str | None]], str]:
+    return _read_vtt_captions(p), "video_caption"
+
+
+def _handle_text(p: Path) -> tuple[str, str]:
+    return read_text_file_content(p), "text"
+
+
+def _handle_code(p: Path) -> tuple[str, str]:
+    return read_text_file_content(p), "code"
+
+
+def _handle_video(
+    p: Path,
+) -> tuple[str | list[dict[str, str | None]], str]:
+    for sidecar in [p.with_suffix(".vtt"), p.with_suffix(".srt")]:
+        if sidecar.exists():
+            return _read_vtt_captions(sidecar), "video_transcript"
+    return "", "video"
+
+
+# --- File Extension to Handler Mapping ---
+DOCUMENT_HANDLERS = {
+    ".pdf": _handle_pdf,
+    ".vtt": _handle_caption,
+    ".srt": _handle_caption,
+    ".txt": _handle_text,
+    ".md": _handle_text,
+    ".rst": _handle_text,
+    ".py": _handle_code,
+    ".sh": _handle_code,
+    ".mp4": _handle_video,
+    ".mov": _handle_video,
+    ".mkv": _handle_video,
+}
+
+
 def extract_document_data(
     p: Path,
 ) -> tuple[str | list[dict[str, str | None]], dict[str, str]]:
     """
-    Returns (text, metadata) for supported files.
+    Returns (text, metadata) for supported files by dispatching to a handler.
     """
-    content: str | list[dict[str, str | None]] = (
-        ""  # Use Any to allow for both string and List[Dict] content
-    )
-    doc_type: str = "unknown"
-
     ext = p.suffix.lower()
-    if ext == ".pdf":
-        content = read_pdf_content(p)
-        doc_type = "pdf"
-    elif ext in {".vtt", ".srt"}:
-        content = _read_vtt_captions(p)  # Returns List[Dict]
-        doc_type = "video_caption"
-    elif ext in {".txt", ".md", ".rst"}:
-        content = read_text_file_content(p)
-        doc_type = "text"
-    elif ext in {".py", ".sh"}:
-        content = read_text_file_content(p)
-        doc_type = "code"
-    elif ext in {".mp4", ".mov", ".mkv"}:
-        # Prefer a sibling transcript if present; otherwise skip video binary
-        for sidecar in [p.with_suffix(".vtt"), p.with_suffix(".srt")]:
-            if sidecar.exists():
-                content = _read_vtt_captions(sidecar)  # Returns List[Dict]
-                doc_type = "video_transcript"
-                break
-        else:
-            return "", {}
-    else:
-        # unsupported file type
+    handler = DOCUMENT_HANDLERS.get(ext)
+
+    if not handler:
+        return "", {}  # Unsupported file type
+
+    content, doc_type = handler(p)
+
+    if not content:
         return "", {}
 
     base_meta = {
