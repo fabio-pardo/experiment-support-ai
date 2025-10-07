@@ -7,6 +7,7 @@ from config import COLLECTION_NAME, EMBEDDING_FN
 
 import os
 import google.generativeai as genai
+import argparse
 
 _ = load_dotenv()  # Load environment variables from .env
 
@@ -63,17 +64,16 @@ def generate_llm_response(
         return f"Error calling Gemini API: {e}"
 
 
-def main():
+def main(ticket_path: Path):
     # Ingest documents into the vector database
     run_document_ingestion()
     print("Documents ingested successfully.")
     # Assuming you have a sample ticket PDF, e.g., in your data/pdfs directory
-    sample_ticket_path = Path(
-        "data/pdfs/CMDR.pdf"
-    )  # Using an existing PDF as an example
-    ticket_content = process_ticket_pdf(sample_ticket_path)
+    ticket_content = process_ticket_pdf(ticket_path)
     if not ticket_content.startswith("Error"):
-        print("\n--- Extracted Ticket Content (first 500 chars) ---")
+        print(
+            f"\n--- Extracted Ticket Content from {ticket_path.name} (first 500 chars) ---"
+        )
         print(
             ticket_content[:500] + "..."
             if len(ticket_content) > 500
@@ -131,4 +131,13 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Support AI Agent using RAG.")
+    _ = parser.add_argument(
+        "--ticket-path",
+        type=Path,
+        default=Path("data/pdfs/CMDR.pdf"),
+        help="Path to the support ticket PDF file.",
+    )
+    args = parser.parse_args()
+
+    main(args.ticket_path)  # pyright: ignore[reportAny]

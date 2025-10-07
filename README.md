@@ -1,60 +1,77 @@
 # Support AI Agent with Multimedia Support
-## 🛠️ MVP Scope & Flow
 
-1. Input: A support engineer asks the agent a troubleshooting question.
-- Example: “How do I restart the container service if it fails after deployment?”
+## Overview
 
-2. Processing:
-- Search runbooks (structured text).
-- Search video transcripts (auto-generated subtitles).
-- Search diagrams/FAQs (converted to text via OCR if needed).
+This project is a Support AI Agent that uses a Retrieval Augmented Generation (RAG) architecture. It ingests documents from a local `data/` directory, stores them in a vector database, and uses a Large Language Model (LLM) to answer queries based on the ingested content.
 
-3. Output:
-The agent returns:
-  - A summary answer synthesized from the best sources.
-  - Linked snippets pointing to:
-    - Relevant runbook section
-    - Video clip (with timestamp)
-    - Diagram or doc reference
+## Current Functionality
 
-Example output:
+- **Data Ingestion**: The agent ingests various document types including PDFs, video transcripts (.vtt, .srt), text files (.txt, .md), and code files. It processes these files, chunks them, and stores them in a ChromaDB vector store.
+- **RAG Pipeline**: When a query is provided (simulated via a sample support ticket PDF), the application searches the vector store for relevant documents.
+- **LLM Integration**: The retrieved documents are then passed to a Large Language Model (Google's Gemini) along with the original query to generate a comprehensive answer.
 
-“You can restart the container service by running systemctl restart containerd. [Runbook, Section 3.2]
-Here’s a 40-sec walkthrough: [Video @ 02:13]
-Troubleshooting diagram: [PDF Page 5]”
+## Technical Details
 
-## 🧩 Key MVP Features
+- **Vector Database**: Uses ChromaDB for local vector storage.
+- **Embeddings**: Utilizes Sentence-Transformers (`all-MiniLM-L6-v2`) for generating document embeddings.
+- **LLM**: Integrated with the Google Gemini API to generate responses.
+- **Core Scripts**:
+  - `ingest.py`: Handles the data ingestion pipeline.
+  - `main.py`: Contains the main application logic for the RAG pipeline.
+  - `config.py`: Manages configuration for the application.
 
-- Multi-modal retrieval (text, video, doc).
-- Snippet + context highlighting (so users trust the answer).
-- Video time-jump links (wow factor).
+## Getting Started
 
-## Current Status
+Follow these instructions to get the project up and running on your local machine.
 
-- The project currently supports ingestion of PDF and VTT (video transcript) files.
-- The `process_ticket_pdf` function has been refactored and moved to `ingest.py` for better modularity.
-- Uses ChromaDB for vector storage and `SentenceTransformerEmbeddingFunction` for embeddings.
+### Prerequisites
 
-## 🚀 How to Build the MVP
+- Python 3.12 or higher.
 
-- Backend:
-  - Store runbooks & transcripts in a vector database (e.g., Pinecone, Weaviate, or FAISS).
-  - Store runbooks & transcripts in a vector database (currently [ChromaDB](https://www.trychroma.com/)).
-  - Use embeddings to make them searchable (currently using `SentenceTransformerEmbeddingFunction` with `all-MiniLM-L6-v2`).
-  - For videos, pre-process transcripts and attach timestamps.
+### Installation
 
-- Frontend:
-  - Simple web UI or chatbot where a user types a question. (Not yet implemented)
-  - Show results grouped by media type. (Not yet implemented)
+1.  **Clone the repository:**
+    ```sh
+    git clone <repository-url>
+    cd support-ai
+    ```
 
-- Demo dataset:
-  - Take 2–3 runbooks (text).
-  - 1–2 knowledge transfer videos (with transcript).
-  - 1 troubleshooting diagram or FAQ doc.
-  - Keep it small but realistic.
+2.  **Create a virtual environment:**
+    ```sh
+    python3 -m venv .venv
+    source .venv/bin/activate
+    ```
 
-## 🌟 Stretch Goals (if time allows)
+3.  **Install the dependencies:**
+    The project uses the dependencies listed in `pyproject.toml`. You can install them using `pip`:
+    ```sh
+    pip install .
+    ```
 
-- Natural language to procedure execution (e.g., agent suggests a command to run).
-- Confidence scores for retrieved answers.
-- Feedback loop (thumbs up/down to refine retrieval).
+### Configuration
+
+The application requires a Google Gemini API key.
+
+1.  Copy the example `.env.example` file to `.env`:
+    ```sh
+    cp .env.example .env
+    ```
+2.  Open the `.env` file and add your Google Gemini API key:
+    ```
+    GOOGLE_API_KEY='your-api-key-here'
+    ```
+
+### Running the Application
+
+Once the dependencies are installed and the `.env` file is configured, you can run the application from the command line.
+
+By default, it will run with the sample ticket:
+```sh
+python main.py
+```
+
+You can also specify the path to a different support ticket using the `--ticket-path` argument:
+```sh
+python main.py --ticket-path /path/to/your/ticket.pdf
+```
+This will start the ingestion process and then run a query with the content of the specified ticket.

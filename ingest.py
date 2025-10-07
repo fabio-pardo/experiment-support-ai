@@ -2,7 +2,7 @@
 import re
 from pathlib import Path  # Ensure Path is imported
 from pypdf import PdfReader
-import webvtt
+import webvtt  # pyright: ignore[reportMissingTypeStubs]
 
 import chromadb
 from config import (
