@@ -27,6 +27,7 @@ Follow these instructions to get the project up and running on your local machin
 ### Prerequisites
 
 - Python 3.12 or higher.
+a [uv](https://github.com/astral-sh/uv) installed.
 
 ### Installation
 
@@ -36,17 +37,12 @@ Follow these instructions to get the project up and running on your local machin
     cd support-ai
     ```
 
-2.  **Create a virtual environment:**
+2.  **Install dependencies using `uv`:**
+    `uv` will automatically create a virtual environment (`.venv`) in the project directory and install the necessary dependencies.
     ```sh
-    python3 -m venv .venv
-    source .venv/bin/activate
+    uv pip install -e '.[dev]'
     ```
-
-3.  **Install the dependencies:**
-    The project uses the dependencies listed in `pyproject.toml`. You can install them using `pip`:
-    ```sh
-    pip install .
-    ```
+    This command installs the project in editable mode (`-e`) along with the development dependencies.
 
 ### Configuration
 
@@ -65,13 +61,29 @@ The application requires a Google Gemini API key.
 
 Once the dependencies are installed and the `.env` file is configured, you can run the application from the command line.
 
+`uv` automatically detects and uses the project's virtual environment, so you don't need to manually activate it.
+
 By default, it will run with the sample ticket:
 ```sh
-python main.py
+uv run rag-cli
 ```
 
 You can also specify the path to a different support ticket using the `--ticket-path` argument:
 ```sh
-python main.py --ticket-path /path/to/your/ticket.pdf
+uv run rag-cli --ticket-path /path/to/your/ticket.pdf
 ```
 This will start the ingestion process and then run a query with the content of the specified ticket.
+
+### Code Quality
+
+This project uses `black` for code formatting and `ruff` for linting. Use `uv run` to execute them within the project's environment.
+
+- **To format the code**, run the following command from the root of the project:
+  ```sh
+  uv run black .
+  ```
+
+- **To lint the code**, run:
+  ```sh
+  uv run ruff check .
+  ```

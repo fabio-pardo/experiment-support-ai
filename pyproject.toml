@@ -11,3 +11,31 @@ dependencies = [
   "sentence-transformers>=5.1.0",
   "webvtt-py>=0.5.1",
 ]
+
+[project.optional-dependencies]
+dev = ["black", "ruff"]
+
+[project.scripts]
+rag-cli = "rag_cli.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+  "E", # pycodestyle errors
+  "W", # pycodestyle warnings
+  "F", # pyflakes
+  "I", # isort
+  "C", # flake8-comprehensions
+  "B", # flake8-bugbear
+]
+ignore = ["E501"] # let black handle line length

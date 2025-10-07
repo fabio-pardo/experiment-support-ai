@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 
 DATA_DIR = Path("data")  # parent directory to ingest

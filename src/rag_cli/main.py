@@ -1,13 +1,14 @@
+import argparse
+import os
+from pathlib import Path
+
+import chromadb
+import google.generativeai as genai
 from chromadb.api.types import QueryResult
 from dotenv import load_dotenv
-import chromadb
-from pathlib import Path
-from ingest import run_document_ingestion, process_ticket_pdf
-from config import COLLECTION_NAME, EMBEDDING_FN
 
-import os
-import google.generativeai as genai
-import argparse
+from support_ai.config import COLLECTION_NAME, EMBEDDING_FN
+from support_ai.ingest import process_ticket_pdf, run_document_ingestion
 
 _ = load_dotenv()  # Load environment variables from .env
 
@@ -64,7 +65,7 @@ def generate_llm_response(
         return f"Error calling Gemini API: {e}"
 
 
-def main(ticket_path: Path):
+def run_workflow(ticket_path: Path):
     # Ingest documents into the vector database
     run_document_ingestion()
     print("Documents ingested successfully.")
@@ -108,6 +109,7 @@ def main(ticket_path: Path):
                         res["documents"][0],
                         res["metadatas"][0],
                         res["ids"][0],
+                        strict=False,
                     )
                 )
                 for doc, meta, id_ in results_for_llm:
@@ -130,7 +132,8 @@ def main(ticket_path: Path):
         print(f"\n--- An error occurred during ChromaDB interaction: {e} ---")
 
 
-if __name__ == "__main__":
+def main():
+    """CLI entry point."""
     parser = argparse.ArgumentParser(description="Support AI Agent using RAG.")
     _ = parser.add_argument(
         "--ticket-path",
@@ -140,4 +143,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    main(args.ticket_path)  # pyright: ignore[reportAny]
+    run_workflow(args.ticket_path)  # pyright: ignore[reportAny]
+
+
+if __name__ == "__main__":
+    main()

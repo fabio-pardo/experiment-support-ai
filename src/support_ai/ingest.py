@@ -1,17 +1,17 @@
-# chroma.py
 import re
 from pathlib import Path  # Ensure Path is imported
-from pypdf import PdfReader
-import webvtt  # pyright: ignore[reportMissingTypeStubs]
 
 import chromadb
-from config import (
-    DATA_DIR,
-    COLLECTION_NAME,
-    CHUNK_SIZE,
+import webvtt  # pyright: ignore[reportMissingTypeStubs]
+from pypdf import PdfReader
+
+from support_ai.config import (
     CHUNK_OVERLAP,
-    EXCLUDE_FILES_FROM_INGESTION,
+    CHUNK_SIZE,
+    COLLECTION_NAME,
+    DATA_DIR,
     EMBEDDING_FN,
+    EXCLUDE_FILES_FROM_INGESTION,
 )
 
 
@@ -174,6 +174,28 @@ def chunk_text(
     return [c for c in chunks if c]
 
 
+def _get_processed_transcripts(root: Path) -> set[Path]:
+    """Finds all transcript files that are sidecars for videos."""
+    processed_transcripts: set[Path] = set()
+    for p in root.rglob("*"):
+        if p.suffix.lower() in {".mp4", ".mov", ".mkv"}:
+            for sidecar in [p.with_suffix(".vtt"), p.with_suffix(".srt")]:
+                if sidecar.exists():
+                    processed_transcripts.add(sidecar)
+    return processed_transcripts
+
+
+def _is_valid_path(p: Path, processed_transcripts: set[Path]) -> bool:
+    """Checks if a path is valid for ingestion."""
+    if p.is_dir():
+        return False
+    if any(part in {".git", ".venv", "venv", "__pycache__"} for part in p.parts):
+        return False
+    if p in processed_transcripts or p in EXCLUDE_FILES_FROM_INGESTION:
+        return False
+    return True
+
+
 def prepare_ingestion_chunks_from_directory(
     root: Path,
 ) -> list[tuple[tuple[str | list[dict[str, str | None]], ...], dict[str, str], str]]:
@@ -183,32 +205,10 @@ def prepare_ingestion_chunks_from_directory(
     items: list[
         tuple[tuple[str | list[dict[str, str | None]], ...], dict[str, str], str]
     ] = []
-    processed_transcripts: set[Path] = (
-        set()
-    )  # Track which transcript files we've processed via videos
+    processed_transcripts = _get_processed_transcripts(root)
 
-    # First pass to collect all video files and their transcripts
     for p in root.rglob("*"):
-        if p.is_dir():
-            continue
-        if any(part in {".git", ".venv", "venv", "__pycache__"} for part in p.parts):
-            continue
-
-        # If it's a video, check for transcripts and mark them
-        if p.suffix.lower() in {".mp4", ".mov", ".mkv"}:
-            for sidecar in [p.with_suffix(".vtt"), p.with_suffix(".srt")]:
-                if sidecar.exists():
-                    processed_transcripts.add(sidecar)
-
-    # Second pass to process files while skipping redundant transcripts
-    for p in root.rglob("*"):
-        if p.is_dir():
-            continue
-        if any(part in {".git", ".venv", "venv", "__pycache__"} for part in p.parts):
-            continue
-
-        # Skip transcript files we've already processed via their videos
-        if p in processed_transcripts or p in EXCLUDE_FILES_FROM_INGESTION:
+        if not _is_valid_path(p, processed_transcripts):
             continue
 
         text, meta = extract_document_data(p)
